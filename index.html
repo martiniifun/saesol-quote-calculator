@@ -49,6 +49,7 @@
   <div class="note">포장비 박스당 1,200원 · 내륙 운송비 박스당 800원 포함 / 환율은 입력값입니다.</div>
 </div>
 
+<script src="calc.js"></script>
 <script>
 // 단가표.csv 내용 (file:// 에서는 CSV를 불러올 수 없어 내장)
 const CSV = `품목코드,품목명,단가(원),박스당 수량
@@ -59,7 +60,6 @@ MY05,건미역 500g,5400,24
 GJ01,고추장 1kg,4900,12
 OM10,오미자청 1L,12000,6`;
 
-const PACK = 1200, INLAND = 800;
 const items = CSV.trim().split("\n").slice(1).map(l => {
   const [code, name, price, perBox] = l.split(",");
   return { code, name, price: +price, perBox: +perBox };
@@ -83,11 +83,7 @@ $("calc").onclick = () => {
   if (!(rate > 0)) { return fail("환율은 0보다 커야 합니다."); }
   err.textContent = "";
 
-  const goods = it.price * qty;
-  const boxes = Math.ceil(qty / it.perBox);
-  const fob = goods + boxes * PACK + boxes * INLAND;
-  const krw = Math.round(fob * (1 + margin / 100));
-  const usd = Math.round(krw / rate * 100) / 100;
+  const { boxes, fob, krw, usd } = Calc.calcQuote(it, qty, margin, rate);
 
   $("r-box").textContent = boxes.toLocaleString("en-US") + " 박스";
   $("r-fob").textContent = fob.toLocaleString("en-US") + " 원";
