@@ -20,6 +20,24 @@
   [hidden] { display: none !important; }
   .err { color: #c00; margin-top: 12px; font-size: 14px; }
   .note { color: #888; font-size: 12px; margin-top: 16px; }
+  .btn-print { background: #2b6cb0; margin-top: 12px; }
+  #sheet { display: none; }
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .card { display: none !important; }
+    #sheet { display: block; width: 210mm; height: 296mm; box-sizing: border-box; padding: 25mm 20mm; overflow: hidden; }
+  }
+  #sheet h2 { font-size: 28px; text-align: center; letter-spacing: 12px; margin: 0 0 24px; }
+  #sheet .co { font-size: 18px; font-weight: bold; }
+  #sheet .meta { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; border-bottom: 2px solid #222; padding-bottom: 8px; }
+  #sheet table { margin-top: 0; font-size: 15px; }
+  #sheet th, #sheet td { border: 1px solid #999; padding: 10px 8px; }
+  #sheet th { background: #f0f0f0; }
+  #sheet td:last-child { text-align: left; }
+  #sheet td.num { text-align: right; }
+  #sheet .total td { font-weight: bold; font-size: 18px; background: #fafafa; }
+  #sheet .foot { margin-top: 24px; font-size: 12px; color: #555; }
 </style>
 </head>
 <body>
@@ -64,7 +82,22 @@
     <tr><td>견적가(원)</td><td id="r-krw"></td></tr>
     <tr class="main"><td>견적가(USD)</td><td id="r-usd"></td></tr>
   </table>
+  <button id="print" type="button" class="btn-print" hidden>견적서 인쇄 (A4)</button>
   <div class="note">포장비 박스당 1,200원 · 내륙 운송비 박스당 800원 포함 / CIF: 해상운임 박스당 일본 1,800원·동남아 2,500원, 보험료 FOB 원가의 0.2% / 환율은 입력값입니다.</div>
+</div>
+
+<div id="sheet">
+  <h2>견 적 서</h2>
+  <div class="meta">
+    <div class="co">새솔물산</div>
+    <div>견적 날짜: <span id="s-date"></span></div>
+  </div>
+  <table>
+    <tr><th>품목</th><th>수량</th><th>조건</th><th>금액(USD)</th></tr>
+    <tr><td id="s-item"></td><td id="s-qty" class="num"></td><td id="s-term"></td><td id="s-usd1" class="num"></td></tr>
+    <tr class="total"><td colspan="3">총액 (Total)</td><td id="s-usd" class="num"></td></tr>
+  </table>
+  <div class="foot">환율 1 USD = <span id="s-rate"></span> 원 기준</div>
 </div>
 
 <script src="calc.js"></script>
@@ -98,7 +131,8 @@ const showCif = on => {
   $("region-wrap").hidden = !on;
 };
 showCif(false);
-$("term").onchange = () => { showCif($("term").value === "CIF"); $("result").hidden = true; };
+$("term").onchange = () => { showCif($("term").value === "CIF"); $("result").hidden = true; $("print").hidden = true; };
+$("print").onclick = () => window.print();
 
 $("calc").onclick = () => {
   const it = items[$("item").value];
@@ -124,7 +158,18 @@ $("calc").onclick = () => {
   $("r-usd").textContent = "USD " + usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   $("result").hidden = false;
 
-  function fail(msg) { err.textContent = msg; $("result").hidden = true; }
+  const usdText = "USD " + usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const d = new Date();
+  $("s-date").textContent = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  $("s-item").textContent = `${it.code} · ${it.name}`;
+  $("s-qty").textContent = qty.toLocaleString("en-US") + " 개";
+  $("s-term").textContent = term === "CIF" ? `CIF (도착 지역: ${region})` : "FOB";
+  $("s-usd1").textContent = usdText;
+  $("s-usd").textContent = usdText;
+  $("s-rate").textContent = rate.toLocaleString("en-US");
+  $("print").hidden = false;
+
+  function fail(msg) { err.textContent = msg; $("result").hidden = true; $("print").hidden = true; }
 };
 </script>
 </body>
