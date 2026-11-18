@@ -25,3 +25,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 환율은 실제 환율이 아닌 사용자 입력값이며 화면에 그렇게 표시한다.
 - 조건은 FOB(기본)/CIF, 지역은 CIF일 때만 사용. 알 수 없는 조건·지역은 예외를 던진다.
 - 인쇄용 견적서는 현재 USD 총액만 보여 준다(원가 내역 미표시).
+
+## 규칙
+- 금액 표기: 원화는 천 단위 쉼표, 달러는 소수 둘째 자리까지.
+- 계산을 바꾸면 반드시 `node test.js`를 실행해 확인한다.
+- 주석은 한국어로 쓴다.
