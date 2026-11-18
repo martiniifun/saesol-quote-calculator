@@ -1,0 +1,15 @@
+# Claude Code 로컬 설정
+.claude/settings.local.json
+.claude/plans/
+
+# 운영체제·편집기 파일
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# 로그·임시 파일
+*.log
+*.tmp
+node_modules/
