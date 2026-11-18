@@ -19,6 +19,13 @@
   tr.main td { font-weight: bold; font-size: 17px; }
   [hidden] { display: none !important; }
   .err { color: #c00; margin-top: 12px; font-size: 14px; }
+  textarea { width: 100%; box-sizing: border-box; margin-top: 8px; padding: 8px; font-size: 13px; font-family: Consolas, monospace; }
+  details { background: #fafafa; border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; }
+  summary { cursor: pointer; font-size: 14px; font-weight: bold; }
+  .row { display: flex; gap: 8px; }
+  .btn-sub { margin-top: 8px; padding: 8px; font-size: 14px; background: #2b6cb0; }
+  .btn-gray { background: #888; }
+  button:disabled { background: #bbb; cursor: not-allowed; }
   .note { color: #888; font-size: 12px; margin-top: 16px; }
   .btn-print { background: #2b6cb0; margin-top: 12px; }
   #sheet { display: none; }
@@ -43,6 +50,17 @@
 <body>
 <div class="card">
   <h1>수출 견적 계산기 (FOB / CIF)</h1>
+
+  <details id="pl-box">
+    <summary id="pl-status"></summary>
+    <textarea id="pl-text" rows="6" placeholder="품목코드,품목명,단가(원),박스당 수량&#10;AA01,예시 품목,1000,10"></textarea>
+    <div class="row">
+      <button id="pl-save" type="button" class="btn-sub">단가표 저장</button>
+      <button id="pl-clear" type="button" class="btn-sub btn-gray">삭제</button>
+    </div>
+    <div id="pl-err" class="err"></div>
+    <div class="hint">쉼표(CSV)로 구분해 붙여 넣으세요. 서버로 전송되지 않고 이 브라우저에만 남습니다.</div>
+  </details>
 
   <label for="item">품목</label>
   <select id="item"></select>
@@ -106,28 +124,64 @@
 
 <script src="calc.js"></script>
 <script>
-// 단가표.csv 내용 (file:// 에서는 CSV를 불러올 수 없어 내장)
-const CSV = `품목코드,품목명,단가(원),박스당 수량
-YJ01,유자차 1kg 병,6800,12
-MG01,건조 망고 1kg,9500,10
-GS20,김 스낵 20g×30,7200,20
-MY05,건미역 500g,5400,24
-GJ01,고추장 1kg,4900,12
-OM10,오미자청 1L,12000,6`;
-
-const items = CSV.trim().split("\n").slice(1).map(l => {
-  const [code, name, price, perBox] = l.split(",");
-  return { code, name, price: +price, perBox: +perBox };
-});
-
+// 단가표는 코드에 두지 않는다. 사용자가 붙여 넣은 CSV를 이 브라우저의 localStorage에만 저장한다.
+const STORE_KEY = "quote-app:pricelist";
 const $ = id => document.getElementById(id);
-items.forEach((it, i) => {
-  const o = document.createElement("option");
-  o.value = i;
-  o.textContent = `${it.code} · ${it.name} (${it.price.toLocaleString("en-US")}원, 박스당 ${it.perBox}개)`;
-  $("item").appendChild(o);
-});
-$("item").value = 1; // MG01
+let items = [];
+
+// CSV 텍스트 → 품목 배열. 형식이 틀리면 예외를 던진다.
+function parseCsv(text) {
+  const lines = text.trim().split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+  if (lines.length && isNaN(+lines[0].split(",")[2])) lines.shift(); // 머리글 줄 제거
+  if (!lines.length) throw new Error("품목이 없습니다.");
+  return lines.map((l, i) => {
+    const [code, name, price, perBox] = l.split(",").map(v => v.trim());
+    if (!code || !name || !(+price >= 0) || !Number.isInteger(+perBox) || +perBox < 1) {
+      throw new Error(`${i + 1}번째 줄 형식이 올바르지 않습니다: ${l}`);
+    }
+    return { code, name, price: +price, perBox: +perBox };
+  });
+}
+
+function renderItems() {
+  const sel = $("item");
+  sel.innerHTML = "";
+  items.forEach((it, i) => {
+    const o = document.createElement("option");
+    o.value = i;
+    o.textContent = `${it.code} · ${it.name} (${it.price.toLocaleString("en-US")}원, 박스당 ${it.perBox}개)`;
+    sel.appendChild(o);
+  });
+  const has = items.length > 0;
+  $("calc").disabled = !has;
+  $("pl-status").textContent = has ? `단가표 ${items.length}개 품목 (이 브라우저에만 저장됨)` : "단가표가 없습니다. 아래에 붙여 넣고 저장하세요.";
+  $("pl-box").open = !has;
+  $("result").hidden = true; $("print").hidden = true;
+}
+
+try {
+  const saved = localStorage.getItem(STORE_KEY);
+  items = saved ? parseCsv(saved) : [];
+} catch (e) { items = []; }
+renderItems();
+
+$("pl-save").onclick = () => {
+  try {
+    const text = $("pl-text").value;
+    items = parseCsv(text);
+    localStorage.setItem(STORE_KEY, text.trim());
+    $("pl-text").value = "";
+    $("pl-err").textContent = "";
+    renderItems();
+  } catch (e) { $("pl-err").textContent = e.message; }
+};
+$("pl-clear").onclick = () => {
+  localStorage.removeItem(STORE_KEY);
+  items = [];
+  $("pl-text").value = "";
+  $("pl-err").textContent = "";
+  renderItems();
+};
 
 const fmtWon = n => n.toLocaleString("en-US") + " 원";
 const showCif = on => {

@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 주의
 
-- **단가표가 두 곳에 있다**: `단가표.csv`와 `index.html` 안의 `CSV` 템플릿 문자열(`file://`에서는 CSV를 fetch할 수 없어 내장). 품목을 바꾸면 둘 다 수정해야 한다.
+- **단가표는 코드·저장소에 두지 않는다**(공개 주소 배포, 단가 비공개). 사용자가 화면에 붙여 넣은 CSV를 `localStorage`(`quote-app:pricelist`)에만 저장한다. 단가표 파일이나 실제 단가를 커밋하지 말 것.
 - 반올림은 전부 `Math.round` (0.5는 올림). USD는 소수 둘째 자리까지.
 - 환율은 실제 환율이 아닌 사용자 입력값이며 화면에 그렇게 표시한다.
 - 조건은 FOB(기본)/CIF, 지역은 CIF일 때만 사용. 알 수 없는 조건·지역은 예외를 던진다.
