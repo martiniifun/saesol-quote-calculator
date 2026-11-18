@@ -5,7 +5,7 @@
   const INSURANCE_RATE = 0.002; // 보험료율: FOB 원가의 0.2%
 
   // item: { price, perBox }, qty: 개수, marginPct: 마진율(%), rate: 환율(원/USD)
-  // opts: { term: "FOB" | "CIF", region: "일본" | "동남아" } — 생략하면 FOB
+  // opts: { term: "FOB" | "CIF", region: "일본" | "동남아", jpyRate: 원/100엔 (선택) } — term 생략하면 FOB
   function calcQuote(item, qty, marginPct, rate, opts) {
     const term = (opts && opts.term) || "FOB";
     const goods = item.price * qty;
@@ -26,7 +26,10 @@
 
     const krw = Math.round(base * (1 + marginPct / 100));
     const usd = Math.round(krw / rate * 100) / 100;
-    return { boxes, fob, freight, insurance, cif, base, krw, usd };
+    // 엔화: 환율은 원/100엔 입력값. 엔은 소수 없이 정수로 반올림. 환율이 없으면 null
+    const jpyRate = opts && opts.jpyRate;
+    const jpy = jpyRate > 0 ? Math.round(krw / jpyRate * 100) : null;
+    return { boxes, fob, freight, insurance, cif, base, krw, usd, jpy };
   }
 
   const api = { PACK, INLAND, FREIGHT, INSURANCE_RATE, calcQuote };

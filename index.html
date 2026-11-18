@@ -70,6 +70,9 @@
   <label for="rate">환율(원/USD) <span class="hint">· 입력값 (실제 환율 아님)</span></label>
   <input id="rate" type="number" min="0" step="any" value="1380">
 
+  <label for="jpyrate">엔화 환율(원/100엔) <span class="hint">· 입력값 (실제 환율 아님)</span></label>
+  <input id="jpyrate" type="number" min="0" step="any" value="900">
+
   <button id="calc" type="button">계산</button>
   <div id="err" class="err"></div>
 
@@ -81,9 +84,10 @@
     <tr class="cif-row"><td>CIF 원가</td><td id="r-cif"></td></tr>
     <tr><td>견적가(원)</td><td id="r-krw"></td></tr>
     <tr class="main"><td>견적가(USD)</td><td id="r-usd"></td></tr>
+    <tr class="main"><td>견적가(JPY)</td><td id="r-jpy"></td></tr>
   </table>
   <button id="print" type="button" class="btn-print" hidden>견적서 인쇄 (A4)</button>
-  <div class="note">포장비 박스당 1,200원 · 내륙 운송비 박스당 800원 포함 / CIF: 해상운임 박스당 일본 1,800원·동남아 2,500원, 보험료 FOB 원가의 0.2% / 환율은 입력값입니다.</div>
+  <div class="note">포장비 박스당 1,200원 · 내륙 운송비 박스당 800원 포함 / CIF: 해상운임 박스당 일본 1,800원·동남아 2,500원, 보험료 FOB 원가의 0.2% / 환율은 입력값입니다. 엔화는 원/100엔 기준, 1엔 단위로 반올림합니다.</div>
 </div>
 
 <div id="sheet">
@@ -137,15 +141,16 @@ $("print").onclick = () => window.print();
 $("calc").onclick = () => {
   const it = items[$("item").value];
   const term = $("term").value, region = $("region").value;
-  const qty = +$("qty").value, margin = +$("margin").value, rate = +$("rate").value;
+  const qty = +$("qty").value, margin = +$("margin").value, rate = +$("rate").value, jpyRate = +$("jpyrate").value;
   const err = $("err");
   if (!Number.isInteger(qty) || qty < 1) { return fail("수량은 1 이상의 정수여야 합니다."); }
   if (!(margin >= 0)) { return fail("마진율은 0 이상이어야 합니다."); }
   if (!(rate > 0)) { return fail("환율은 0보다 커야 합니다."); }
+  if (!(jpyRate > 0)) { return fail("엔화 환율은 0보다 커야 합니다."); }
   err.textContent = "";
 
-  const { boxes, fob, freight, insurance, cif, krw, usd } =
-    Calc.calcQuote(it, qty, margin, rate, { term, region });
+  const { boxes, fob, freight, insurance, cif, krw, usd, jpy } =
+    Calc.calcQuote(it, qty, margin, rate, { term, region, jpyRate });
 
   $("r-box").textContent = boxes.toLocaleString("en-US") + " 박스";
   $("r-fob").textContent = fmtWon(fob);
@@ -156,6 +161,7 @@ $("calc").onclick = () => {
   }
   $("r-krw").textContent = fmtWon(krw);
   $("r-usd").textContent = "USD " + usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  $("r-jpy").textContent = "JPY " + jpy.toLocaleString("en-US");
   $("result").hidden = false;
 
   const usdText = "USD " + usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

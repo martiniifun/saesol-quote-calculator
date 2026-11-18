@@ -34,6 +34,13 @@ assert.strictEqual(s.cif, 1213500 + 32500 + 2427);
 assert.strictEqual(s.krw, Math.round(s.cif * 1.12));
 console.log("동남아 CIF 통과:", s);
 
+// 엔화: 예시 B 견적가 1,359,120원 ÷ 900원/100엔 = 151,013.33 → 151,013엔
+const j = calcQuote({ price: 9500, perBox: 10 }, 125, 12, 1380, { jpyRate: 900 });
+assert.strictEqual(j.jpy, 151013);
+assert.strictEqual(j.usd, 984.87); // 달러 결과는 그대로
+assert.strictEqual(r.jpy, null); // 엔화 환율이 없으면 null
+console.log("엔화 통과:", j.jpy);
+
 // 알 수 없는 지역은 오류
 assert.throws(() => calcQuote({ price: 1, perBox: 1 }, 1, 0, 1, { term: "CIF", region: "미주" }));
 console.log("모든 테스트 통과");
