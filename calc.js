@@ -9,7 +9,7 @@
   function calcQuote(item, qty, marginPct, rate, opts) {
     const term = (opts && opts.term) || "FOB";
     const goods = item.price * qty;
-    const boxes = Math.floor(qty / item.perBox);
+    const boxes = Math.ceil(qty / item.perBox);
     const fob = goods + boxes * PACK + boxes * INLAND;
 
     let freight = 0, insurance = 0, cif = null, base = fob;
